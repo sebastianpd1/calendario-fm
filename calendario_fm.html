@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendario</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: transparent;
+        padding: 12px;
+      }
+      :root {
+        --cal-bg: #2d1f5e;
+        --cal-cell: #3d2d7a;
+        --cal-cell-hover: #4e3a90;
+        --cal-border: #4e3a90;
+      }
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .toggle-label {
+        font-size: 12px;
+        color: #888;
+      }
+      .view-toggle {
+        display: flex;
+        border: 0.5px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .vtab {
+        padding: 4px 12px;
+        font-size: 11px;
+        cursor: pointer;
+        background: #fff;
+        color: #888;
+        border: none;
+        transition: all 0.15s;
+      }
+      .vtab.active {
+        background: #7c3aed;
+        color: #fff;
+      }
+      .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .filter-label {
+        font-size: 12px;
+        color: #888;
+      }
+      .user-chip {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        border: 0.5px solid #4e3a90;
+        cursor: pointer;
+        background: #3d2d7a;
+        color: #c4b5fd;
+        transition: all 0.15s;
+      }
+      .user-chip.active {
+        background: #7c3aed;
+        border-color: #7c3aed;
+        color: #fff;
+      }
+      .cal-container {
+        background: var(--cal-bg);
+        border-radius: 12px;
+        padding: 14px;
+        overflow: hidden;
+      }
+      .mini-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .mini-title {
+        font-size: 11px;
+        font-weight: 500;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+      }
+      .expand-btn {
+        background: none;
+        border: 0.5px solid #4e3a90;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        color: #c4b5fd;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: background 0.15s;
+      }
+      .expand-btn:hover {
+        background: #3d2d7a;
+      }
+      .seven-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+      }
+      .day-box {
+        background: var(--cal-cell);
+        border-radius: 8px;
+        padding: 7px 5px;
+        min-height: 90px;
+        cursor: pointer;
+        transition: background 0.15s;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid transparent;
+      }
+      .day-box:hover {
+        background: var(--cal-cell-hover);
+      }
+      .day-box.today {
+        border-color: #a78bfa;
+      }
+      .day-name {
+        font-size: 9px;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 3px;
+      }
+      .day-num {
+        font-size: 17px;
+        font-weight: 500;
+        color: #ffffff;
+        margin-bottom: 5px;
+        line-height: 1;
+      }
+      .day-box.today .day-num {
+        color: #a78bfa;
+      }
+      .ev-block {
+        border-radius: 5px;
+        padding: 4px 5px;
+        margin-bottom: 3px;
+        font-size: 9px;
+        font-weight: 500;
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .more-lbl {
+        font-size: 9px;
+        color: #c4b5fd;
+        margin-top: 2px;
+      }
+      .month-view {
+        display: none;
+      }
+      .month-view.visible {
+        display: block;
+      }
+      .mini-view.hidden {
+        display: none;
+      }
+      .month-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .month-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #ffffff;
+      }
+      .nav-btn {
+        background: none;
+        border: 0.5px solid #4e3a90;
+        border-radius: 8px;
+        width: 26px;
+        height: 26px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #c4b5fd;
+        transition: background 0.15s;
+        font-size: 13px;
+      }
+      .nav-btn:hover {
+        background: #3d2d7a;
+      }
+      .month-grid-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-bottom: 4px;
+      }
+      .weekday-label {
+        font-size: 9px;
+        color: #ffffff;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 3px 0;
+      }
+      .month-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+      }
+      .month-cell {
+        background: var(--cal-cell);
+        border-radius: 8px;
+        min-height: 76px;
+        padding: 6px 5px;
+        cursor: pointer;
+        transition: background 0.15s;
+        border: 1px solid transparent;
+      }
+      .month-cell:hover {
+        background: var(--cal-cell-hover);
+      }
+      .month-cell.today {
+        border-color: #a78bfa;
+      }
+      .month-cell.other-month {
+        opacity: 0.35;
+      }
+      .month-cell .mday {
+        font-size: 11px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #ffffff;
+      }
+      .month-cell.today .mday {
+        color: #a78bfa;
+      }
+      .minimize-row {
+        margin-top: 10px;
+        text-align: right;
+      }
+      .loading {
+        font-size: 12px;
+        color: #c4b5fd;
+        text-align: center;
+        padding: 20px;
+      }
+      .general-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        background: #3d2d7a;
+        border-radius: 8px;
+      }
+      .general-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .general-title {
+        font-size: 12px;
+        color: #ffffff;
+      }
+      .general-tag {
+        margin-left: auto;
+        font-size: 10px;
+        color: #c4b5fd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toggle-row">
+      <span class="toggle-label">vista</span>
+      <div class="view-toggle">
+        <button class="vtab active" onclick="switchView('personal', this)">
+          personal
+        </button>
+        <button class="vtab" onclick="switchView('general', this)">
+          general
+        </button>
+      </div>
+    </div>
+
+    <div id="personal-view">
+      <div class="filter-bar">
+        <span class="filter-label">usuario</span>
+        <div id="user-chips"></div>
+      </div>
+      <div class="cal-container">
+        <div class="mini-view" id="mini-view">
+          <div class="mini-header">
+            <span class="mini-title">próximos 7 días</span>
+            <button class="expand-btn" onclick="toggleExpand()">
+              &#x26F6; ampliar
+            </button>
+          </div>
+          <div class="seven-days" id="seven-days">
+            <div class="loading">cargando...</div>
+          </div>
+        </div>
+        <div class="month-view" id="month-view">
+          <div class="month-nav">
+            <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+            <span class="month-label" id="month-label"></span>
+            <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+          </div>
+          <div class="month-grid-header">
+            <div class="weekday-label">lun</div>
+            <div class="weekday-label">mar</div>
+            <div class="weekday-label">mié</div>
+            <div class="weekday-label">jue</div>
+            <div class="weekday-label">vie</div>
+            <div class="weekday-label">sáb</div>
+            <div class="weekday-label">dom</div>
+          </div>
+          <div class="month-grid" id="month-grid"></div>
+          <div class="minimize-row">
+            <button class="expand-btn" onclick="toggleExpand()">
+              &#x26F6; minimizar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="general-view" style="display: none">
+      <div class="cal-container">
+        <div class="mini-header" style="margin-bottom: 12px">
+          <span class="mini-title">calendario general empresa</span>
+        </div>
+        <div
+          id="general-list"
+          style="display: flex; flex-direction: column; gap: 6px"
+        >
+          <div class="loading">cargando...</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ─── CONFIGURACIÓN ───────────────────────────────────────────
+      const SUPABASE_URL = "TU_URL_SUPABASE"; // ej: https://xxxxxx.supabase.co
+      const SUPABASE_KEY = "TU_ANON_KEY"; // tu anon/publishable key
+      // ─────────────────────────────────────────────────────────────
+
+      const TODAY = new Date();
+      TODAY.setHours(0, 0, 0, 0);
+      let currentMonth = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+      let expanded = false;
+      let activeUser = "todos";
+      let allEvents = [];
+      let allUsers = [];
+
+      const EV_COLORS = {
+        green: { bg: "#4ade80", text: "#14532d" },
+        blue: { bg: "#60a5fa", text: "#1e3a5f" },
+        amber: { bg: "#fbbf24", text: "#78350f" },
+        red: { bg: "#f87171", text: "#7f1d1d" },
+        purple: { bg: "#c084fc", text: "#3b0764" },
+        pink: { bg: "#f472b6", text: "#831843" },
+        teal: { bg: "#34d399", text: "#064e3b" },
+        orange: { bg: "#fb923c", text: "#7c2d12" },
+      };
+
+      const GENERAL_COLORS = {
+        empresa: "#4ade80",
+        feriado: "#60a5fa",
+        cumpleanos: "#f472b6",
+        evento: "#fbbf24",
+      };
+
+      function getColor(c) {
+        return EV_COLORS[c] || EV_COLORS.blue;
+      }
+      function sameDay(a, b) {
+        return (
+          a.getFullYear() === b.getFullYear() &&
+          a.getMonth() === b.getMonth() &&
+          a.getDate() === b.getDate()
+        );
+      }
+      function dateInRange(d, s, e) {
+        const dd = new Date(d);
+        dd.setHours(0, 0, 0, 0);
+        const ss = new Date(s);
+        ss.setHours(0, 0, 0, 0);
+        const ee = new Date(e);
+        ee.setHours(0, 0, 0, 0);
+        return dd >= ss && dd <= ee;
+      }
+      function parseDate(str) {
+        const [y, m, d] = str.split("-");
+        return new Date(+y, +m - 1, +d);
+      }
+
+      async function fetchEvents() {
+        try {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/eventos?select=*&order=fecha_inicio.asc`,
+            {
+              headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+          const data = await res.json();
+          allEvents = data.map((e) => ({
+            ...e,
+            start: parseDate(e.fecha_inicio),
+            end: parseDate(e.fecha_fin),
+          }));
+          // extraer usuarios únicos
+          const personal = allEvents.filter((e) => e.tipo === "personal");
+          const usuarios = [
+            ...new Set(personal.map((e) => e.usuario).filter(Boolean)),
+          ];
+          allUsers = usuarios;
+          renderUserChips();
+          renderSeven();
+          if (expanded) renderMonth();
+          renderGeneral();
+        } catch (err) {
+          document.getElementById("seven-days").innerHTML =
+            `<div class="loading">error al cargar datos</div>`;
+        }
+      }
+
+      function filteredEvents() {
+        const personal = allEvents.filter((e) => e.tipo === "personal");
+        if (activeUser === "todos") return personal;
+        return personal.filter((e) => e.usuario === activeUser);
+      }
+
+      function renderUserChips() {
+        const cont = document.getElementById("user-chips");
+        cont.innerHTML = "";
+        const todos = document.createElement("button");
+        todos.className =
+          "user-chip" + (activeUser === "todos" ? " active" : "");
+        todos.textContent = "todos";
+        todos.onclick = () => setUser(todos, "todos");
+        cont.appendChild(todos);
+        allUsers.forEach((u) => {
+          const btn = document.createElement("button");
+          btn.className = "user-chip" + (activeUser === u ? " active" : "");
+          btn.textContent = u;
+          btn.onclick = () => setUser(btn, u);
+          cont.appendChild(btn);
+        });
+      }
+
+      function renderSeven() {
+        const cont = document.getElementById("seven-days");
+        cont.innerHTML = "";
+        const evs = filteredEvents();
+        const names = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(TODAY);
+          d.setDate(TODAY.getDate() + i);
+          const isToday = sameDay(d, TODAY);
+          const dow = d.getDay() === 0 ? 6 : d.getDay() - 1;
+          const dayEvs = evs.filter((e) => dateInRange(d, e.start, e.end));
+          const shown = dayEvs.slice(0, 3);
+          const extra = dayEvs.length - 3;
+          let blocks = shown
+            .map((e) => {
+              const c = getColor(e.color);
+              const t =
+                e.titulo.length > 10 ? e.titulo.slice(0, 9) + "…" : e.titulo;
+              return `<div class="ev-block" style="background:${c.bg};color:${c.text}">${t}</div>`;
+            })
+            .join("");
+          if (extra > 0) blocks += `<div class="more-lbl">+${extra}</div>`;
+          const box = document.createElement("div");
+          box.className = "day-box" + (isToday ? " today" : "");
+          box.innerHTML = `<div class="day-name">${names[dow]}</div><div class="day-num">${d.getDate()}</div>${blocks}`;
+          cont.appendChild(box);
+        }
+      }
+
+      function renderMonth() {
+        const evs = filteredEvents();
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        const months = [
+          "enero",
+          "febrero",
+          "marzo",
+          "abril",
+          "mayo",
+          "junio",
+          "julio",
+          "agosto",
+          "septiembre",
+          "octubre",
+          "noviembre",
+          "diciembre",
+        ];
+        document.getElementById("month-label").textContent =
+          `${months[month]} ${year}`;
+        const grid = document.getElementById("month-grid");
+        grid.innerHTML = "";
+        const first = new Date(year, month, 1);
+        let startDow = first.getDay() === 0 ? 6 : first.getDay() - 1;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrev = new Date(year, month, 0).getDate();
+        const cells = [];
+        for (let i = startDow - 1; i >= 0; i--)
+          cells.push({ day: daysInPrev - i, cur: false });
+        for (let i = 1; i <= daysInMonth; i++)
+          cells.push({ day: i, cur: true });
+        let ex = 1;
+        while (cells.length % 7 !== 0) {
+          cells.push({ day: ex++, cur: false });
+        }
+        cells.forEach((cell) => {
+          const d = new Date(
+            year,
+            cell.cur
+              ? month
+              : cells.indexOf(cell) < startDow
+                ? month - 1
+                : month + 1,
+            cell.day,
+          );
+          const isToday = sameDay(d, TODAY);
+          const dayEvs = evs.filter((e) => dateInRange(d, e.start, e.end));
+          let evHtml = "";
+          dayEvs.slice(0, 2).forEach((e) => {
+            const c = getColor(e.color);
+            evHtml += `<div class="ev-block" style="background:${c.bg};color:${c.text};font-size:9px;padding:3px 4px;margin-bottom:2px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.titulo}</div>`;
+          });
+          if (dayEvs.length > 2)
+            evHtml += `<div class="more-lbl" style="font-size:9px;color:#c4b5fd">+${dayEvs.length - 2}</div>`;
+          const cell_el = document.createElement("div");
+          cell_el.className =
+            "month-cell" +
+            (isToday ? " today" : "") +
+            (cell.cur ? "" : " other-month");
+          cell_el.innerHTML = `<div class="mday">${cell.day}</div>${evHtml}`;
+          grid.appendChild(cell_el);
+        });
+      }
+
+      function renderGeneral() {
+        const general = allEvents.filter((e) => e.tipo === "general");
+        const cont = document.getElementById("general-list");
+        if (general.length === 0) {
+          cont.innerHTML = '<div class="loading">sin eventos generales</div>';
+          return;
+        }
+        cont.innerHTML = "";
+        general.forEach((e) => {
+          const color = GENERAL_COLORS[e.categoria] || "#c4b5fd";
+          const fechaStr =
+            e.fecha_inicio === e.fecha_fin
+              ? e.fecha_inicio
+              : `${e.fecha_inicio} → ${e.fecha_fin}`;
+          const div = document.createElement("div");
+          div.className = "general-item";
+          div.innerHTML = `
+      <div class="general-dot" style="background:${color}"></div>
+      <span class="general-title">${fechaStr} — ${e.titulo}</span>
+      <span class="general-tag">${e.categoria || ""}</span>`;
+          cont.appendChild(div);
+        });
+      }
+
+      function toggleExpand() {
+        expanded = !expanded;
+        document
+          .getElementById("mini-view")
+          .classList.toggle("hidden", expanded);
+        document
+          .getElementById("month-view")
+          .classList.toggle("visible", expanded);
+        if (expanded) renderMonth();
+      }
+
+      function changeMonth(dir) {
+        currentMonth = new Date(
+          currentMonth.getFullYear(),
+          currentMonth.getMonth() + dir,
+          1,
+        );
+        renderMonth();
+      }
+
+      function setUser(btn, user) {
+        activeUser = user;
+        document
+          .querySelectorAll(".user-chip")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderSeven();
+        if (expanded) renderMonth();
+      }
+
+      function switchView(v, btn) {
+        document
+          .querySelectorAll(".vtab")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("personal-view").style.display =
+          v === "personal" ? "block" : "none";
+        document.getElementById("general-view").style.display =
+          v === "general" ? "block" : "none";
+      }
+
+      // Iniciar
+      fetchEvents();
+    </script>
+  </body>
+</html>
